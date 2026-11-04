@@ -1,3 +1,4 @@
+
 # 📂 Interview Task – Simple Category Manager
 
 Welcome! 🎉
@@ -72,4 +73,5 @@ When the app starts you’ll see a *Login* screen that expects a username and an
   "email": "Sincere@april.biz"
 }
 ```
+
 
