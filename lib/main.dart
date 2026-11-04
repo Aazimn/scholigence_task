@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:interview_task/views/login_screen.dart';
+import 'package:interview_task/views/splash_screen.dart';
 import 'package:interview_task/providers/user_provider.dart';
 
 void main() {
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.indigo,
           scaffoldBackgroundColor: const Color(0xFFF5F6FA),
         ),
-        home: const LoginScreen(),
+        home: const SplashScreen(),
         debugShowCheckedModeBanner: false,
       ),
     );

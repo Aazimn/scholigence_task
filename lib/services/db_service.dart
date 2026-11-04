@@ -29,9 +29,40 @@ class DbService {
   }
 
 
-  static Future<int> addCategory(String name, {int? parentId}) async {
+  static Future<bool> categoryExists(String name, {int? parentId, int? excludeId}) async {
     final db = await database;
-    return db.insert('categories', {'name': name, 'parent_id': parentId});
+    final cleanName = name.trim();
+    String where = 'TRIM(name) = ? COLLATE NOCASE';
+    List<dynamic> args = [cleanName];
+
+    if (parentId == null) {
+      where += ' AND parent_id IS NULL';
+    } else {
+      where += ' AND parent_id = ?';
+      args.add(parentId);
+    }
+
+    if (excludeId != null) {
+      where += ' AND id != ?';
+      args.add(excludeId);
+    }
+
+    final result = await db.query(
+      'categories',
+      where: where,
+      whereArgs: args,
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
+
+  static Future<int> addCategory(String name, {int? parentId}) async {
+    final cleanName = name.trim();
+    if (await categoryExists(cleanName, parentId: parentId)) {
+      return -1;
+    }
+    final db = await database;
+    return db.insert('categories', {'name': cleanName, 'parent_id': parentId});
   }
 
 
@@ -69,6 +100,30 @@ class DbService {
     return result.isNotEmpty;
   }
 
+
+  static Future<int> updateCategory(int id, String newName, {int? parentId}) async {
+    final cleanName = newName.trim();
+    final db = await database;
+
+    int? actualParentId = parentId;
+    if (actualParentId == null) {
+      final rows = await db.query('categories', columns: ['parent_id'], where: 'id = ?', whereArgs: [id]);
+      if (rows.isNotEmpty) {
+        actualParentId = rows.first['parent_id'] as int?;
+      }
+    }
+
+    if (await categoryExists(cleanName, parentId: actualParentId, excludeId: id)) {
+      return -1;
+    }
+
+    return db.update(
+      'categories',
+      {'name': cleanName},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 
   static Future<void> deleteCategory(int id) async {
     final db = await database;
