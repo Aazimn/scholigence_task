@@ -1,77 +1,93 @@
 
-# 📂 Interview Task – Simple Category Manager
+# 📂 Interview Task – Category Manager
 
-Welcome! 🎉
-
-This little Flutter app is meant to show off a clean, easy‑to‑understand code base that you can pick up in a few minutes. It lets you manage categories (think *Electronics → Android → Samsung*) – add, view, search and delete them – all on your phone or emulator.
+A Flutter app to manage categories in a tree structure (e.g. *Electronics → Android → Samsung*). Built with clean, simple code that's easy to follow.
 
 ---
 
 ## What the app does
 
-- **Home screen** – a friendly greeting, a search bar, and a paginated list of top‑level categories.
-- **Add Category** – a bright *Add Category* button replaces the old *Manage* button. Tap it, type a name, and boom – the new category appears.
-- **Add Sub‑category** – on the category detail page you get a floating `+` button that works the same way, but attaches the new item under the selected parent.
-- **Search** – start typing and you instantly see *all* matching results (no pagination for search, so you never miss anything).
-- **Delete** – swipe left or hit the trash icon to remove a category and everything beneath it.
-- **Profile tab** – a quick view of the logged‑in user’s name, email and username.
-
-That’s it – a tiny, self‑contained app that demonstrates good UI patterns without any backend.
+- Browse, add, edit, and delete categories at any depth
+- Paginated list of categories (10 per page)
+- Search across all categories with breadcrumb path shown
+- Profile tab showing user info (name, email, phone, website, company)
 
 ---
 
-## Why we chose the tools we did
+## Project Architecture
 
-### Provider for state management
-- **Lightweight:** No ceremony, just a couple of `ChangeNotifier`s.
-- **Flutter‑first:** It’s part of the official ecosystem, well‑documented and works everywhere.
-- **Perfect fit:** Our state is simple – current page, search query, and a refresh trigger. Provider handles that with almost no boilerplate.
+Simple layered structure — nothing fancy:
 
-### SQLite (via `sqflite`) for local storage
-- **Relational data:** Categories have a parent‑child relationship – SQLite lets us query that efficiently.
-- **Offline‑first:** The app works even when you have no internet, which is great for interview demos.
-- **Tiny footprint:** For a project this size the database is only a few kilobytes; no server needed.
-
----
-
-## Project layout (at a glance)
 ```
-/lib
-├─ models/            # `Category` data class
-├─ services/          # `DbService` – all the SQLite CRUD helpers
-├─ views/             # UI screens (`home_screen.dart`, `category_page.dart`)
-├─ main.dart          # App entry, Provider setup
-└─ utils/ (optional) # small helper functions
-
-pubspec.yaml          # dependencies (provider, sqflite, path)
-README.md             # you are reading it now!
+lib/
+├── models/      →  Data classes (Category)
+├── services/    →  DbService (SQLite CRUD), ApiService (login API)
+├── providers/   →  UserProvider, CategoryProvider, HomeProvider (all app state)
+├── views/       →  UI screens (splash_screen.dart, login_screen.dart, home_screen.dart, category_screen.dart, profile_screen.dart)
+└── main.dart    →  App entry point, Provider setup
 ```
 
----
-
-## Getting the app up and running
-
-1. **Make sure you have Flutter** installed (stable channel) and an emulator or device ready.
-2. **Grab the packages** – this step needs internet:
-   ```bash
-   flutter pub get
-   ```
-3. **Launch the app**:
-   ```bash
-   flutter run
-   ```
-   The app will start on the Home screen. Try adding a category, searching, deleting, and switching to the Profile tab.
+The UI never touches the database directly — it always goes through `DbService` via Providers. Same for the API — `ApiService` handles the HTTP call and `UserProvider` holds the result.
 
 ---
 
-## Demo login details (hard‑coded mock payload)
-When the app starts you’ll see a *Login* screen that expects a username and an email. Use the values below – they’ll also appear on the Profile tab after you “log in”.
+## State Management
 
-```json
-{
-  "username": "Bret",
-  "email": "Sincere@april.biz"
-}
+The entire app uses **Provider** (`ChangeNotifierProvider`) for state management, and **all UI screens are 100% `StatelessWidget`s**.
+
+- **`UserProvider`**: Handles authentication, mock login via API, and holds current user profile data.
+- **`CategoryProvider`**: Scoped per category level; manages category CRUD operations, database queries, and pagination (`currentPage`, `totalPages`, `prevPage()`, `nextPage()`, and reload after add/edit/delete).
+- **`HomeProvider`**: Manages bottom navigation bar switching and full-tree category search query & results.
+
+Every screen listens to its provider via `context.watch<T>()` or `Consumer<T>`, cleanly separating business logic and database operations from presentation.
+
+---
+
+## Local Database
+
+**SQLite via `sqflite`** — chosen because:
+- Categories have a parent-child relationship that fits naturally in a relational table
+- Works fully offline, data persists across restarts
+- Lightweight and fast for this scale
+
+Schema:
+```sql
+CREATE TABLE categories (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  name      TEXT NOT NULL,
+  parent_id INTEGER  -- NULL = root category
+);
 ```
 
+---
 
+## Category Hierarchy
+
+Uses an **adjacency list** — each row stores a `parent_id` pointing to its parent (or NULL for root).
+
+- Tapping a category pushes a new `CategoryScreen` with that item's `id` as `parentId` — the same screen reused at every level
+- Deleting a category recursively deletes all its children first
+- Search results show a breadcrumb path (`Electronics › Android › Samsung`) built by walking up the `parent_id` chain
+
+---
+
+## Search & Pagination
+
+**Search** runs a `LIKE '%query%'` across the whole categories table — all levels, no pagination on results so nothing is hidden.
+
+**Pagination** uses SQL `LIMIT` and `OFFSET`. Page size is 10. The total count is fetched with `COUNT(*)` so the bar shows `Page 1 / 5` and disables arrows at the edges.
+
+---
+
+## Running the app
+
+```bash
+flutter pub get
+flutter run
+```
+
+**Demo login:**
+```
+Username: Bret
+Email:    Sincere@april.biz
+```
