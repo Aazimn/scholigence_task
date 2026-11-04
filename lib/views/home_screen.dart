@@ -39,7 +39,7 @@ class _HomeView extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.indigo,
         title: Text(
-          homeProvider.currentIndex == 0 ? 'Home' : 'My Profile',
+          homeProvider.currentIndex == 0 ? 'Category Manager' : 'My Profile',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -164,10 +164,8 @@ class _HomeView extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton.icon(
-                  onPressed: () => _showAddRootCategoryDialog(
-                    context,
-                    categoryProvider,
-                  ),
+                  onPressed: () =>
+                      _showAddRootCategoryDialog(context, categoryProvider),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Add Category'),
                   style: ElevatedButton.styleFrom(
@@ -373,44 +371,44 @@ class _HomeView extends StatelessWidget {
           child: categoryProvider.isLoading
               ? const Center(child: CircularProgressIndicator())
               : categoryProvider.categories.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.category_outlined,
-                            size: 64,
-                            color: Colors.grey.shade300,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No categories yet',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Tap Add Category to add your first category',
-                            style: TextStyle(
-                              color: Colors.grey.shade400,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        size: 64,
+                        color: Colors.grey.shade300,
                       ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                      itemCount: categoryProvider.categories.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) => _categoryCard(
-                        context,
-                        categoryProvider,
-                        categoryProvider.categories[i],
+                      const SizedBox(height: 12),
+                      Text(
+                        'No categories yet',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 15,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Tap Add Category to add your first category',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                  itemCount: categoryProvider.categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) => _categoryCard(
+                    context,
+                    categoryProvider,
+                    categoryProvider.categories[i],
+                  ),
+                ),
         ),
 
         Padding(
@@ -429,7 +427,8 @@ class _HomeView extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),
-                onPressed: categoryProvider.currentPage < categoryProvider.totalPages
+                onPressed:
+                    categoryProvider.currentPage < categoryProvider.totalPages
                     ? () => categoryProvider.nextPage()
                     : null,
               ),
